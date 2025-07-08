@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Text
 from sqlalchemy.sql import func
-from database.database import Base
+from data.database.database import Base
 import uuid
 
 class ListeningHistory(Base):

@@ -7,13 +7,15 @@ Handles errors gracefully and logs everything
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the project root to the Python path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy.orm import Session
-from database.database import SessionLocal, engine
-from database.simple_models import Base, ListeningHistory
+from data.database.database import SessionLocal, engine
+from data.database.simple_models import Base, ListeningHistory
 from config.settings import settings
 from datetime import datetime, timezone
 import logging
@@ -24,7 +26,7 @@ from pathlib import Path
 def setup_logging():
     """Set up comprehensive logging"""
     # Create logs directory if it doesn't exist
-    log_dir = Path("logs")
+    log_dir = Path("data/logs")
     log_dir.mkdir(exist_ok=True)
     
     # Create log filename with timestamp

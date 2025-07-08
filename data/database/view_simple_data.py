@@ -1,5 +1,5 @@
-from database.database import SessionLocal
-from database.simple_models import ListeningHistory
+from data.database.database import SessionLocal
+from data.database.simple_models import ListeningHistory
 from sqlalchemy import func
 
 def view_simple_data():
