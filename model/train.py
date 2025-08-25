@@ -1,86 +1,165 @@
-#!/usr/bin/env python3
-import os
 import numpy as np
-from sklearn.decomposition import PCA
-
 from data_loader import DataLoader
-from model import Network
-from utils import one_hot_encode, print_classification_report, calculate_class_weights
+from model import Network, FullyConnectedLayer, SoftmaxLayer, sigmoid
+from sklearn.metrics import classification_report
 
+def load_and_prepare_data():
+    """
+    Load the DEAM dataset and prepare it for training.
+    Returns: training_data, test_data, feature_names
+    """
+    print("🚀 Loading and preparing data...")
+    
+    # Use your working DataLoader
+    loader = DataLoader()
+    X_train, X_test, y_train, y_test, feature_names = loader.prepare_all()
+    
+    print(f"✅ Data loaded successfully!")
+    print(f"   Training samples: {X_train.shape[0]}")
+    print(f"   Test samples: {X_test.shape[0]}")
+    print(f"   Features: {X_train.shape[1]}")
+    print(f"   Classes: {len(np.unique(y_train))}")
+    
+    return X_train, X_test, y_train, y_test, feature_names
+
+def create_network():
+    """
+    Create the neural network architecture.
+    Returns: network
+    """
+    print("🚀 Creating network...")
+
+    layers = [
+        # Input layer: 51 features -> 128 hidden neurons
+        FullyConnectedLayer(n_in=51, n_out=128, activation_fn=sigmoid, p_dropout=0.0),
+        # Hidden layer: 128 -> 64
+        FullyConnectedLayer(n_in=128, n_out=64, activation_fn=sigmoid, p_dropout=0.0),
+        # Output layer: 64 -> 3 classes
+        SoftmaxLayer(n_in=64, n_out=3, p_dropout=0.0)
+    ]
+
+    mini_batch_size = 32
+
+    net = Network(layers, mini_batch_size)
+    print("✅ Network created successfully!")
+    print(f"   Architecture: 51 → 128 → 64 → 3")
+    print(f"   Mini-batch size: {mini_batch_size}")
+
+    return net
+
+def prepare_training_data(X_train, X_test, y_train, y_test):
+    """
+    Prepare the training data for the network.
+    Returns: training_data, test_data
+    """
+    print("🚀 Preparing training data...")
+
+    training_data = (X_train, y_train)
+    test_data = (X_test, y_test)
+
+    print(f"✅ Training data prepared successfully!")
+    print(f"   Training samples: {training_data[0].shape[0]}")
+    print(f"   Test samples: {len(test_data)}")
+
+    return training_data, test_data
+
+def train_network(net, training_data, test_data):
+    """
+    Train the network using stochastic gradient descent.
+    """
+    print("🚀 Training network...")
+
+    epochs = 30
+    mini_batch_size = 32
+    learning_rate = 0.1
+    lmbda = 0.0
+
+    print(f"📋 Training configuration:")
+    print(f"   Epochs: {epochs}")
+    print(f"   Learning rate: {learning_rate}")
+    print(f"   Mini-batch size: {mini_batch_size}")
+    print(f"   L2 regularization: {lmbda}")
+    
+    # Start training!
+    net.SGD(
+        training_data=training_data,
+        epochs=epochs,
+        mini_batch_size=mini_batch_size,
+        eta=learning_rate,
+        validation_data=test_data,  # Use test data as validation for now
+        test_data=test_data,
+        lmbda=lmbda
+    )
+    
+    print("✅ Training completed!")
+    print("✅ Network trained successfully!")
+    print(f"   Epochs: {epochs}")
+    print(f"   Learning rate: {learning_rate}")
+
+def evaluate_network(net, X_test, y_test):
+    """
+    Evaluate the trained network on test data.
+    """
+    print("🚀 Evaluating network performance...")
+    
+    # Get predictions for all test samples
+    predictions = []
+    for i in range(len(X_test)):
+        # Get the output probabilities for this sample
+        output = net.layers[-1].output.eval({net.x: X_test[i:i+1]})
+        # Convert to class prediction
+        pred_class = np.argmax(output)
+        predictions.append(pred_class)
+    
+    predictions = np.array(predictions)
+    
+    # Calculate accuracy
+    accuracy = np.mean(predictions == y_test)
+    
+    print(f"✅ Evaluation complete!")
+    print(f"   Test accuracy: {accuracy:.2%}")
+    
+    # Show class-wise performance
+    from sklearn.metrics import classification_report
+    class_names = ['High', 'Low', 'Medium']
+    print("\n📈 Detailed Classification Report:")
+    print(classification_report(y_test, predictions, target_names=class_names))
+    
+    return predictions, accuracy
 
 def main():
-    # 1) Load and preprocess data
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_path = os.path.join(project_root, 'data', 'final_preprocessed_dataset.csv')
-    loader = DataLoader(data_path=data_path)
-    X_train, X_test, y_train, y_test, feature_names = loader.prepare_all()
-
-    # Reduce dimensionality to 50 for the network input
-    n_components = min(50, X_train.shape[1])
-    pca = PCA(n_components=n_components, random_state=42)
-    X_train = pca.fit_transform(X_train)
-    X_test = pca.transform(X_test)
-
-    num_features = X_train.shape[1]  # should be 50
-    num_classes = len(np.unique(y_train))  # should be 9
-
-    # 2) Shape features to column vectors and one-hot encode labels
-    # Our Network expects inputs as column vectors (n_features, 1)
-    X_train_cols = [x.reshape(num_features, 1) for x in X_train]
-    X_test_cols = [x.reshape(num_features, 1) for x in X_test]
-
-    y_train_oh = one_hot_encode(y_train, num_classes)
-    y_test_oh = one_hot_encode(y_test, num_classes)
-
-    # 3) Build a simple network: input -> hidden -> output
-    # Start small; you can tune sizes later
-    net = Network([num_features, 128, 64, num_classes], use_softmax_ce=True)
-
-    # 4) Class weights to mitigate imbalance
-    class_weights = calculate_class_weights(y_train, method='balanced')
-
-    # 5) Gentle oversampling of minority classes (cap at 3x duplication)
-    class_counts = {c: int(np.sum(y_train == c)) for c in np.unique(y_train)}
-    max_target = max(min(max(class_counts.values()), 3 * min(class_counts.values())), min(class_counts.values()) * 3)
-    oversampled = []
-    for x_col, y_vec, y_int in zip(X_train_cols, y_train_oh, y_train):
-        reps = max(1, min(max_target // max(1, class_counts[y_int]), 3))
-        for _ in range(reps):
-            oversampled.append((x_col, y_vec.reshape(num_classes, 1)))
-
-    training_data = oversampled
-    test_data = list(zip(X_test_cols, y_test))  # evaluate() expects integer labels
-
-    # 6) Train (softmax CE, weighted, with L2 and LR decay)
-    epochs = 60
-    mini_batch_size = 32
-    learning_rate = 0.2
-    l2_lambda = 1e-4
-    lr_decay = 0.98  # decay per epoch
-    net.SGD(
-        training_data,
-        epochs,
-        mini_batch_size,
-        learning_rate,
-        test_data=test_data,
-        class_weights=class_weights,
-        l2_lambda=l2_lambda,
-        lr_decay=lr_decay,
-    )
-
-    # 7) Final evaluation and report
-    y_pred = []
-    for x in X_test_cols:
-        probs = net.feedforward(x)
-        y_pred.append(int(np.argmax(probs)))
-    y_pred = np.array(y_pred)
-
-    class_names = list(getattr(loader.label_encoder, 'classes_', [f"Class_{i}" for i in range(num_classes)]))
-    print_classification_report(y_test, y_pred, class_names=class_names)
-
+    """
+    Main training pipeline.
+    """
+    print("🎵 Starting Mood Classification Training Pipeline")
+    print("=" * 50)
+    
+    try:
+        # Step 1: Load and prepare data
+        X_train, X_test, y_train, y_test, feature_names = load_and_prepare_data()
+        
+        # Step 2: Create network
+        net = create_network()
+        
+        # Step 3: Prepare data format
+        training_data, test_data = prepare_training_data(X_train, X_test, y_train, y_test)
+        
+        # Step 4: Train network
+        train_network(net, training_data, test_data)
+        
+        # Step 5: Evaluate results
+        predictions, accuracy = evaluate_network(net, X_test, y_test)
+        
+        print("\n🎉 Training pipeline completed successfully!")
+        print(f"Final test accuracy: {accuracy:.2%}")
+        
+    except Exception as e:
+        print(f"❌ Error during training: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
 
-
-
+    
+    
