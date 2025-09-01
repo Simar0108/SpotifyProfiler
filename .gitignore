@@ -103,6 +103,10 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .venv
 env/
 venv/
@@ -130,8 +134,12 @@ dmypy.json
 
 # macOS
 .DS_Store
+.DS_Store?
 .AppleDouble
 .LSOverride
+._*
+.Spotlight-V100
+.Trashes
 
 # Icon must end with two \r
 Icon
@@ -142,9 +150,7 @@ Icon
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
-.Spotlight-V100
 .TemporaryItems
-.Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
@@ -180,9 +186,19 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
 # Project-specific ignores
 # Large data files
 data/MPD/
+data/embeddings/
+data/deam/
+data/DEAM/
 *.csv
 *.json.gz
 *.parquet
@@ -195,6 +211,7 @@ data/MPD/
 *.hdf5
 *.pkl
 *.pickle
+*.joblib
 
 # Embeddings and large arrays
 *.npy
@@ -220,12 +237,14 @@ tmp/
 temp/
 *.tmp
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
-# Jupyter notebook checkpoints
-.ipynb_checkpoints/
+# Cache
+.cache/
+*.cache
+
+# MLflow
+mlflow_logs/
