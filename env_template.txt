@@ -1,0 +1,6 @@
+# ReccoBeats API Configuration
+# Get your API key from: https://api.reccobeats.com
+RECCOBEATS_API_KEY=your_api_key_here
+
+# Optional: Adjust rate limiting (requests per minute)
+# RECCOBEATS_RATE_LIMIT=60

@@ -1,0 +1,32 @@
+{
+  "completed_experiments": [
+    "lr_0.015_64d",
+    "hidden_64_64d",
+    "scheduler_cosine_64d",
+    "neg_15_64d",
+    "lr_0.012_64d",
+    "optimizer_adamw_64d",
+    "hidden_128_64d",
+    "hidden_96_64d",
+    "batch_512_64d",
+    "lr_0.010_64d",
+    "neg_25_64d",
+    "scheduler_step_64d",
+    "batch_2048_64d",
+    "lr_0.005_64d",
+    "scheduler_plateau_64d",
+    "batch_4096_64d",
+    "neg_22_64d",
+    "hidden_192_64d",
+    "lr_0.020_64d",
+    "neg_18_64d",
+    "batch_1024_64d",
+    "hidden_256_64d",
+    "lr_0.008_64d",
+    "neg_30_64d"
+  ],
+  "current_phase": 1,
+  "current_experiment": 0,
+  "timestamp": "2025-08-29T01:10:07.295585",
+  "total_experiments": 28
+}
